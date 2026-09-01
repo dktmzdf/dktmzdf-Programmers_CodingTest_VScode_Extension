@@ -2,12 +2,7 @@
 
 프로그래머스 스쿨 코딩테스트 숙제를 VS Code에서 풀고, 제출하고, 기록으로 남기기 위한 저장소.
 
-## 이 폴더에 뭐가 있나
-
-| 경로 | 내용 |
-| --- | --- |
 | [`extension/`](extension/) | VS Code 확장 본체. **사용법은 [extension/README.md](extension/README.md)** |
-| `problems/` | 문제별 풀이 결과물 — 숙제 제출물이자 복습 자료 |
 
 ## 빠른 시작
 
