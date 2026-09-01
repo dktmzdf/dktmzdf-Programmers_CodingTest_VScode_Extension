@@ -13,6 +13,9 @@
     "Other"
   ],
   "main": "./src/extension.js",
+  "scripts": {
+    "package:vsix": "vsce package --out ../coding-test-agent-${npm_package_version}.vsix"
+  },
   "activationEvents": [],
   "contributes": {
     "viewsContainers": {

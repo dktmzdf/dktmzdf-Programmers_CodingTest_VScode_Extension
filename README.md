@@ -7,7 +7,6 @@
 | 경로 | 내용 |
 | --- | --- |
 | [`extension/`](extension/) | VS Code 확장 본체. **사용법은 [extension/README.md](extension/README.md)** |
-| [`docs/programmers-api.md`](docs/programmers-api.md) | 프로그래머스 내부 통신 정리. 사이트가 개편돼 확장이 깨지면 여기부터 본다 |
 | `problems/` | 문제별 풀이 결과물 — 숙제 제출물이자 복습 자료 |
 
 ## 빠른 시작

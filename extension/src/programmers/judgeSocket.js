@@ -5,7 +5,7 @@ const { ORIGIN } = require('./parser');
 
 /**
  * 프로그래머스의 코드 실행·채점은 전부 ActionCable WebSocket 한 채널로 오간다.
- * REST 제출 엔드포인트는 존재하지 않는다. 프로토콜은 `docs/programmers-api.md` 참고.
+ * REST 제출 엔드포인트는 존재하지 않는다.
  *
  * Node 22+ 의 전역 WebSocket(undici)은 표준에 없는 `headers` 옵션을 받아 준다.
  * 서버가 `Origin` 을 요구하므로 이게 없으면 붙지 못한다 — 확인된 사항이다.

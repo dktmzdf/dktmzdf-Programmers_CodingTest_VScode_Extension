@@ -1,0 +1,7 @@
+.vscode/**
+test/**
+jsconfig.json
+node_modules/**
+*.vsix
+**/__pycache__/**
+**/*.pyc
