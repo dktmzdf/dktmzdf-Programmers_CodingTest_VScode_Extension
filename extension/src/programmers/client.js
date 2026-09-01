@@ -44,7 +44,16 @@ class ProgrammersClient {
     const cookie = await this._auth.getCookie();
     if (!cookie) return { ok: false, reason: '등록된 쿠키가 없습니다.' };
 
-    const res = await this._get(`${ORIGIN}/learn/challenges`, { redirect: 'manual' });
+    return await this.checkCookieAuth(cookie);
+  }
+
+  /**
+   * 아직 저장하지 않은 브라우저 쿠키가 로그인 상태인지 확인한다.
+   * @param {string} cookie
+   * @returns {Promise<{ ok: boolean, reason?: string }>}
+   */
+  async checkCookieAuth(cookie) {
+    const res = await this._get(`${ORIGIN}/learn/challenges`, { redirect: 'manual', cookie });
 
     if (res.status >= 300 && res.status < 400) {
       const to = res.headers.get('location') ?? '';
@@ -115,23 +124,24 @@ class ProgrammersClient {
   /**
    * @private
    * @param {string} url
-   * @param {{ redirect?: RequestRedirect }} [opts]
+   * @param {{ redirect?: RequestRedirect, cookie?: string }} [opts]
    * @returns {Promise<Response>}
    */
   async _get(url, opts = {}) {
     return await fetch(url, {
       method: 'GET',
       redirect: opts.redirect ?? 'follow',
-      headers: await this._headers(url),
+      headers: await this._headers(url, opts.cookie),
     });
   }
 
   /**
    * @private
    * @param {string} referer
+   * @param {string} [cookieOverride]
    * @returns {Promise<Record<string, string>>}
    */
-  async _headers(referer) {
+  async _headers(referer, cookieOverride) {
     /** @type {Record<string, string>} */
     const h = {
       'User-Agent': UA,
@@ -139,7 +149,7 @@ class ProgrammersClient {
       'Accept-Language': 'ko-KR,ko;q=0.9,en;q=0.8',
       'Referer': referer,
     };
-    const cookie = await this._auth.getCookie();
+    const cookie = cookieOverride ?? await this._auth.getCookie();
     if (cookie) h['Cookie'] = cookie;
     return h;
   }

@@ -55,13 +55,13 @@
         "category": "코딩테스트"
       },
       {
-        "command": "codingTest.setCookie",
-        "title": "코딩테스트: 프로그래머스 로그인 쿠키 등록",
+        "command": "codingTest.login",
+        "title": "코딩테스트: 프로그래머스 로그인",
         "category": "코딩테스트"
       },
       {
-        "command": "codingTest.clearCookie",
-        "title": "코딩테스트: 로그인 쿠키 삭제",
+        "command": "codingTest.logout",
+        "title": "코딩테스트: 프로그래머스 로그아웃",
         "category": "코딩테스트"
       },
       {
@@ -94,6 +94,11 @@
           "type": "string",
           "default": "",
           "markdownDescription": "로컬 테스트에 쓸 파이썬 실행 파일. 비워두면 Python 확장이 선택한 인터프리터 → `python` 순으로 찾는다."
+        },
+        "codingTest.browserPath": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "프로그래머스 자동 로그인에 쓸 Chrome 또는 Edge 실행 파일. 비워두면 설치된 Chrome → Edge 순으로 찾는다."
         },
         "codingTest.timeoutMs": {
           "type": "number",

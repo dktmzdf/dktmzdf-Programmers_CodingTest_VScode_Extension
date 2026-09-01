@@ -3,6 +3,7 @@
 
 const vscode = require('vscode');
 const { Auth } = require('./auth');
+const { BrowserLogin } = require('./browserLogin');
 const { Session } = require('./session');
 const { ProblemViewProvider, VIEW_ID } = require('./panel/provider');
 
@@ -12,7 +13,11 @@ const { ProblemViewProvider, VIEW_ID } = require('./panel/provider');
  */
 function activate(context) {
   const auth = new Auth(context.secrets);
-  const session = new Session(auth);
+  const browserLogin = new BrowserLogin(
+    context.globalStorageUri.fsPath,
+    () => String(vscode.workspace.getConfiguration('codingTest').get('browserPath') || '')
+  );
+  const session = new Session(auth, browserLogin);
   const provider = new ProblemViewProvider(context.extensionUri, session);
 
   context.subscriptions.push(
@@ -45,8 +50,11 @@ function activate(context) {
 
     vscode.commands.registerCommand('codingTest.runLocal', () => session.runLocal()),
     vscode.commands.registerCommand('codingTest.submit', () => session.submit()),
-    vscode.commands.registerCommand('codingTest.setCookie', () => session.promptForCookie()),
-    vscode.commands.registerCommand('codingTest.clearCookie', () => session.clearCookie()),
+    vscode.commands.registerCommand('codingTest.login', () => session.login()),
+    vscode.commands.registerCommand('codingTest.logout', () => session.logout()),
+    // 이전 버전의 명령 ID는 사용자 단축키 호환을 위해 등록만 유지한다.
+    vscode.commands.registerCommand('codingTest.setCookie', () => session.login()),
+    vscode.commands.registerCommand('codingTest.clearCookie', () => session.logout()),
     vscode.commands.registerCommand('codingTest.openWide', () => provider.openWide())
   );
 }

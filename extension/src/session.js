@@ -37,12 +37,15 @@ const { explain, KINDS } = require('./explain');
 class Session {
   /**
    * @param {import('./auth').Auth} auth
+   * @param {import('./browserLogin').BrowserLogin} browserLogin
    */
-  constructor(auth) {
+  constructor(auth, browserLogin) {
     /** @private */
     this._auth = auth;
     /** @private */
     this._client = new ProgrammersClient(auth);
+    /** @private */
+    this._browserLogin = browserLogin;
     /** @private @type {vscode.EventEmitter<SessionState>} */
     this._emitter = new vscode.EventEmitter();
     /** @private @type {AbortController | null} */
@@ -388,38 +391,57 @@ class Session {
   }
 
   /** @returns {Promise<void>} */
-  async promptForCookie() {
-    const value = await vscode.window.showInputBox({
-      title: '프로그래머스 로그인 쿠키 등록',
-      prompt:
-        'F12 → Network 탭 → F5 → 맨 위 요청 클릭 → Request Headers 의 cookie: 값을 통째로 붙여넣으세요.',
-      placeHolder: 'a=1; b=2; c=3  (세미콜론으로 이어진 줄 전체)',
-      password: true,
-      ignoreFocusOut: true,
-    });
-    if (value === undefined) return;
-
-    try {
-      await this._auth.setCookie(value);
-    } catch (e) {
-      this.update({ error: e instanceof Error ? e.message : String(e) });
-      return;
-    }
-    await this.refreshAuth();
-    this.update({
-      notice: this.state.auth.ok ? '로그인 확인됐습니다.' : null,
-      error: this.state.auth.ok ? null : this.state.auth.reason ?? '쿠키 확인에 실패했습니다.',
+  async login() {
+    await this._withBusy('로그인 기다리는 중', async (signal) => {
+      const cookie = await this._browserLogin.login(async (candidate) => {
+        try {
+          return (await this._client.checkCookieAuth(candidate)).ok;
+        } catch {
+          // 로그인 도중 일시적인 페이지 전환이나 네트워크 실패는 다음 확인에서 재시도한다.
+          return false;
+        }
+      }, signal);
+      await this._auth.setCookie(cookie);
+      this.update({
+        auth: { ok: true },
+        notice: '프로그래머스 로그인을 확인했습니다.',
+        error: null,
+      });
     });
   }
 
   /** @returns {Promise<void>} */
-  async clearCookie() {
+  async logout() {
+    const answer = await vscode.window.showWarningMessage(
+      '프로그래머스 로그인 정보와 확장 전용 브라우저 프로필을 삭제할까요?',
+      { modal: true },
+      '로그아웃'
+    );
+    if (answer !== '로그아웃') return;
+
     await this._auth.clearCookie();
-    this.update({ auth: { ok: false, reason: '쿠키를 삭제했습니다.' }, notice: '쿠키를 삭제했습니다.' });
+    try {
+      await this._browserLogin.logout();
+      this.update({
+        auth: { ok: false, reason: '로그아웃했습니다.' },
+        notice: '로그인 정보와 전용 브라우저 프로필을 삭제했습니다.',
+        error: null,
+      });
+    } catch (e) {
+      this.update({
+        auth: { ok: false, reason: '저장된 쿠키는 삭제했습니다.' },
+        error: e instanceof Error ? e.message : String(e),
+      });
+    }
   }
+
+  // 이전 명령 ID를 쓰는 사용자 설정과 단축키를 위한 호환 별칭.
+  async promptForCookie() { await this.login(); }
+  async clearCookie() { await this.logout(); }
 
   dispose() {
     this._abort?.abort();
+    this._browserLogin.dispose();
     this._emitter.dispose();
   }
 }

@@ -477,36 +477,41 @@
     }
 
     const authRow = sec.querySelector('#auth-row');
-    if (!state.auth?.ok) authRow?.appendChild(renderAuthHelp());
+    authRow?.appendChild(state.auth?.ok ? renderLoggedIn() : renderAuthHelp());
     return sec;
   }
 
-  /** 쿠키를 어디서 어떻게 복사하는지 단계로 보여 준다. */
+  /** 별도 브라우저에서 안전하게 로그인하는 방법을 보여 준다. */
   function renderAuthHelp() {
     const b = el(`<div class="banner warn" style="margin-top:10px">
       <div id="auth-msg"></div>
       <details class="problem" style="margin-top:6px">
-        <summary>쿠키 복사하는 법</summary>
+        <summary>로그인은 어떻게 하나요?</summary>
         <ol style="padding-left:1.3em; margin:6px 0">
-          <li>크롬에서 <b>프로그래머스에 로그인</b>한 상태로 아무 문제 페이지를 연다</li>
-          <li><b>F12</b>를 눌러 개발자도구를 열고 위쪽 <b>Network</b> 탭으로 간다</li>
-          <li><b>F5</b>로 페이지를 새로고침한다 (목록이 채워진다)</li>
-          <li>목록 <b>맨 위</b>의 요청(이름이 <code>181950…</code> 처럼 생긴 것)을 클릭</li>
-          <li>오른쪽 <b>Headers</b> 탭에서 아래로 내려 <b>Request Headers</b> 를 찾는다</li>
-          <li><code>cookie:</code> 줄의 <b>값 전체</b>를 드래그해 복사한다 (<code>Ctrl+C</code>)</li>
-          <li>아래 <b>쿠키 등록</b> 을 누르고 붙여넣는다 (<code>Ctrl+V</code>) → <code>Enter</code></li>
+          <li>아래 <b>브라우저에서 로그인</b>을 누른다</li>
+          <li>확장이 연 전용 Chrome 또는 Edge 창에서 프로그래머스에 로그인한다</li>
+          <li>로그인이 확인되면 창이 자동으로 닫힌다</li>
         </ol>
         <div class="dim">
-          값 하나만이 아니라 <code>a=1; b=2; c=3</code> 처럼 세미콜론으로 이어진 줄 전체를
-          복사해야 한다. 쿠키 이름은 몰라도 된다.
+          비밀번호와 소셜 로그인 정보는 확장이 읽지 않는다. 로그인 세션만 VS Code의
+          SecretStorage에 보관한다.
         </div>
       </details>
-      <div class="row" style="margin-top:8px"><button class="ghost" id="set-cookie">쿠키 등록</button></div>
+      <div class="row" style="margin-top:8px"><button class="ghost" id="login">브라우저에서 로그인</button></div>
     </div>`);
 
     const msg = b.querySelector('#auth-msg');
     if (msg) msg.textContent = `제출하려면 로그인이 필요합니다 — ${state.auth?.reason || ''}`;
-    b.querySelector('#set-cookie')?.addEventListener('click', () => send('setCookie'));
+    b.querySelector('#login')?.addEventListener('click', () => send('login'));
+    return b;
+  }
+
+  function renderLoggedIn() {
+    const b = el(`<div class="row" style="margin-top:8px">
+      <span class="dim grow">프로그래머스 로그인됨</span>
+      <button class="ghost" id="logout">로그아웃</button>
+    </div>`);
+    b.querySelector('#logout')?.addEventListener('click', () => send('logout'));
     return b;
   }
 

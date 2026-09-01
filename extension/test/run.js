@@ -38,6 +38,7 @@ const keepAlive = setInterval(() => {}, 500);
   require('./syntax.test')(suite);
   require('./markdown.test')(suite);
   require('./parser.test')(suite);
+  require('./browser-login.test')(suite);
   await require('./runner.test')(suite);
 
   suite.summary();
