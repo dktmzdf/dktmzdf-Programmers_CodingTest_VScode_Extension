@@ -1,0 +1,282 @@
+:root {
+  --gap: 10px;
+  --radius: 4px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: var(--gap);
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size);
+  color: var(--vscode-foreground);
+  background: var(--vscode-sideBar-background, var(--vscode-editor-background));
+  line-height: 1.55;
+}
+
+section { margin-bottom: 14px; }
+
+h2.title {
+  margin: 0 0 2px;
+  font-size: 1.15em;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.meta {
+  font-size: 0.85em;
+  opacity: 0.65;
+  margin-bottom: 8px;
+  word-break: break-all;
+}
+
+/* ---------------------------------------------------------------- 입력/버튼 */
+
+.row { display: flex; gap: 6px; align-items: center; }
+.row + .row { margin-top: 6px; }
+.grow { flex: 1 1 auto; min-width: 0; }
+
+input[type="text"], textarea {
+  width: 100%;
+  padding: 5px 7px;
+  color: var(--vscode-input-foreground);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border, transparent);
+  border-radius: var(--radius);
+  font-family: inherit;
+  font-size: inherit;
+}
+textarea {
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 0.92em;
+  min-height: 52px;
+  resize: vertical;
+  white-space: pre;
+  overflow-wrap: normal;
+  overflow-x: auto;
+}
+input[type="text"]:focus, textarea:focus {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: -1px;
+}
+
+button {
+  padding: 5px 11px;
+  color: var(--vscode-button-foreground);
+  background: var(--vscode-button-background);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  white-space: nowrap;
+}
+button:hover:not(:disabled) { background: var(--vscode-button-hoverBackground); }
+button:disabled { opacity: 0.45; cursor: default; }
+
+button.secondary {
+  color: var(--vscode-button-secondaryForeground);
+  background: var(--vscode-button-secondaryBackground);
+}
+button.secondary:hover:not(:disabled) { background: var(--vscode-button-secondaryHoverBackground); }
+
+button.ghost {
+  color: var(--vscode-foreground);
+  background: transparent;
+  border-color: var(--vscode-panel-border, rgba(128, 128, 128, 0.35));
+}
+button.ghost:hover:not(:disabled) { background: var(--vscode-toolbar-hoverBackground); }
+
+button.link {
+  padding: 0;
+  color: var(--vscode-textLink-foreground);
+  background: none;
+  border: none;
+  text-decoration: underline;
+  font-size: 0.88em;
+}
+
+.btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+
+/* ---------------------------------------------------------------- 배너 */
+
+.banner {
+  padding: 7px 10px;
+  border-radius: var(--radius);
+  border-left: 3px solid;
+  margin-bottom: 8px;
+  font-size: 0.92em;
+}
+.banner.error {
+  border-color: var(--vscode-inputValidation-errorBorder, #be1100);
+  background: var(--vscode-inputValidation-errorBackground, rgba(190, 17, 0, 0.12));
+}
+.banner.notice {
+  border-color: var(--vscode-inputValidation-infoBorder, #3794ff);
+  background: var(--vscode-inputValidation-infoBackground, rgba(55, 148, 255, 0.1));
+}
+.banner.warn {
+  border-color: var(--vscode-inputValidation-warningBorder, #b89500);
+  background: var(--vscode-inputValidation-warningBackground, rgba(184, 149, 0, 0.12));
+}
+.banner .row { margin-top: 6px; }
+
+/* ---------------------------------------------------------------- 문제 본문 */
+
+details.problem > summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 4px 0;
+  user-select: none;
+}
+details.problem > summary::marker { color: var(--vscode-descriptionForeground); }
+
+.description {
+  padding: 2px 0 4px;
+  overflow-x: auto;
+}
+.description p { margin: 0.55em 0; }
+.description h1, .description h2, .description h3,
+.description h4, .description h5, .description h6 {
+  margin: 1.1em 0 0.4em;
+  font-size: 1.02em;
+  font-weight: 600;
+}
+.description ul, .description ol { margin: 0.5em 0; padding-left: 1.4em; }
+.description li { margin: 0.2em 0; }
+.description hr {
+  border: none;
+  border-top: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.3));
+  margin: 0.9em 0;
+}
+.description code {
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: var(--vscode-textCodeBlock-background, rgba(128, 128, 128, 0.17));
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 0.9em;
+}
+.description pre {
+  margin: 0.5em 0;
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  background: var(--vscode-textCodeBlock-background, rgba(128, 128, 128, 0.12));
+  overflow-x: auto;
+}
+.description pre code { padding: 0; background: none; }
+.description img { max-width: 100%; height: auto; }
+.description table { border-collapse: collapse; margin: 0.6em 0; }
+.description th, .description td {
+  padding: 4px 9px;
+  border: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.35));
+  text-align: left;
+}
+.description a { color: var(--vscode-textLink-foreground); }
+
+/* ---------------------------------------------------------------- 테스트 케이스 */
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+.section-head .count { opacity: 0.6; font-weight: 400; font-size: 0.9em; }
+
+.case {
+  border: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.28));
+  border-radius: var(--radius);
+  margin-bottom: 6px;
+  overflow: hidden;
+}
+.case > .head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 8px;
+  cursor: pointer;
+  user-select: none;
+}
+.case > .head:hover { background: var(--vscode-list-hoverBackground); }
+.case .name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.case .tag {
+  font-size: 0.78em;
+  padding: 0 5px;
+  border-radius: 8px;
+  opacity: 0.7;
+  border: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.4));
+}
+.case .ms { font-size: 0.8em; opacity: 0.55; }
+.case > .body {
+  padding: 7px 8px 9px;
+  border-top: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.22));
+}
+.case.pass { border-left: 3px solid var(--vscode-testing-iconPassed, #3fb950); }
+.case.fail { border-left: 3px solid var(--vscode-testing-iconFailed, #f14c4c); }
+.case.error { border-left: 3px solid var(--vscode-testing-iconErrored, #f14c4c); }
+.case.timeout { border-left: 3px solid var(--vscode-testing-iconQueued, #cca700); }
+
+.io-label { font-size: 0.83em; opacity: 0.7; margin: 6px 0 2px; }
+.io {
+  margin: 0;
+  padding: 6px 8px;
+  border-radius: var(--radius);
+  background: var(--vscode-textCodeBlock-background, rgba(128, 128, 128, 0.12));
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 0.88em;
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+.io.expected { border-left: 2px solid var(--vscode-testing-iconPassed, #3fb950); }
+.io.actual { border-left: 2px solid var(--vscode-testing-iconFailed, #f14c4c); }
+.io.empty { opacity: 0.5; font-style: italic; }
+
+/* ---------------------------------------------------------------- 해설 */
+
+.explanation {
+  padding: 9px 11px;
+  border-radius: var(--radius);
+  background: var(--vscode-textBlockQuote-background, rgba(128, 128, 128, 0.08));
+  border-left: 3px solid var(--vscode-textLink-foreground);
+}
+.explanation h3, .explanation h4 { margin: 0.8em 0 0.35em; font-size: 1em; }
+.explanation h3:first-child, .explanation h4:first-child { margin-top: 0; }
+.explanation p { margin: 0.5em 0; }
+.explanation ul, .explanation ol { margin: 0.45em 0; padding-left: 1.35em; }
+.explanation code {
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: var(--vscode-textCodeBlock-background, rgba(128, 128, 128, 0.2));
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 0.9em;
+}
+.explanation pre {
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  background: var(--vscode-textCodeBlock-background, rgba(128, 128, 128, 0.16));
+  overflow-x: auto;
+}
+.explanation pre code { padding: 0; background: none; }
+
+.spinner {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  vertical-align: -1px;
+  margin-right: 6px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.empty-hint {
+  padding: 18px 6px;
+  text-align: center;
+  opacity: 0.6;
+  font-size: 0.92em;
+}
+.dim { opacity: 0.62; font-size: 0.87em; }

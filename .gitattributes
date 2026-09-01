@@ -1,0 +1,4 @@
+# 소스는 LF로 통일한다. 픽스처 비교가 줄바꿈 때문에 흔들리지 않게.
+* text=auto eol=lf
+
+*.png binary

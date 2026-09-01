@@ -1,0 +1,116 @@
+{
+  "name": "coding-test-agent",
+  "displayName": "코딩테스트 에이전트",
+  "description": "프로그래머스 스쿨 문제를 VS Code에서 불러오고, 로컬 테스트하고, 제출하고, 클로드에게 힌트를 받는다.",
+  "version": "0.1.0",
+  "publisher": "local",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Education",
+    "Other"
+  ],
+  "main": "./src/extension.js",
+  "activationEvents": [],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "codingTest",
+          "title": "코딩테스트",
+          "icon": "media/activity-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "codingTest": [
+        {
+          "id": "codingTest.problem",
+          "name": "문제",
+          "type": "webview"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "codingTest.toggle",
+        "title": "코딩테스트: 패널 토글",
+        "category": "코딩테스트"
+      },
+      {
+        "command": "codingTest.loadProblem",
+        "title": "코딩테스트: 문제 불러오기",
+        "category": "코딩테스트"
+      },
+      {
+        "command": "codingTest.runLocal",
+        "title": "코딩테스트: 로컬 테스트 실행",
+        "category": "코딩테스트"
+      },
+      {
+        "command": "codingTest.submit",
+        "title": "코딩테스트: 제출 후 채점하기",
+        "category": "코딩테스트"
+      },
+      {
+        "command": "codingTest.setCookie",
+        "title": "코딩테스트: 프로그래머스 로그인 쿠키 등록",
+        "category": "코딩테스트"
+      },
+      {
+        "command": "codingTest.clearCookie",
+        "title": "코딩테스트: 로그인 쿠키 삭제",
+        "category": "코딩테스트"
+      },
+      {
+        "command": "codingTest.openWide",
+        "title": "코딩테스트: 문제 넓게 보기",
+        "category": "코딩테스트"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "codingTest.toggle",
+        "key": "ctrl+alt+p",
+        "mac": "cmd+alt+p"
+      },
+      {
+        "command": "codingTest.runLocal",
+        "key": "ctrl+alt+t",
+        "mac": "cmd+alt+t"
+      }
+    ],
+    "configuration": {
+      "title": "코딩테스트 에이전트",
+      "properties": {
+        "codingTest.problemsRoot": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "문제 폴더를 만들 위치. 비워두면 열려 있는 워크스페이스의 `problems/` 를 쓴다."
+        },
+        "codingTest.pythonPath": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "로컬 테스트에 쓸 파이썬 실행 파일. 비워두면 Python 확장이 선택한 인터프리터 → `python` 순으로 찾는다."
+        },
+        "codingTest.timeoutMs": {
+          "type": "number",
+          "default": 5000,
+          "description": "로컬 테스트 케이스 하나당 제한 시간 (밀리초)."
+        },
+        "codingTest.claudePath": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "해설에 쓸 Claude Code CLI 실행 파일. 비워두면 `PATH` 에서 `claude` 를 찾는다."
+        },
+        "codingTest.claudeModel": {
+          "type": "string",
+          "default": "sonnet",
+          "markdownDescription": "해설을 만들 모델. 코딩테스트 해설에는 `sonnet` 이면 충분하고 `opus` 보다 훨씬 싸다."
+        }
+      }
+    }
+  }
+}

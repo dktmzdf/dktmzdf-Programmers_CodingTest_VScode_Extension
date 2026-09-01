@@ -1,0 +1,23 @@
+# 확장 개발 부산물
+node_modules/
+out/
+*.vsix
+
+# 테스트 실행 결과 (매번 덮어쓰인다)
+extension/test/last-run.txt
+
+# 파이썬 부산물 — 하네스가 남기지 않도록 고쳤지만 혹시 모르니
+__pycache__/
+*.pyc
+
+# 개인 화면이 찍힌 스크린샷.
+# 브라우저 탭 목록과 계정 아바타가 보여서 추적하지 않는다.
+# 정말 넣고 싶으면 `git add -f <파일>` 로 강제할 수 있다.
+스크린샷*.png
+
+# OS
+Thumbs.db
+.DS_Store
+
+# problems/ 는 숙제 결과물이므로 커밋 대상이다 — 무시하지 않는다.
+# 로그인 쿠키는 SecretStorage에만 있고 파일로 저장되지 않는다.
