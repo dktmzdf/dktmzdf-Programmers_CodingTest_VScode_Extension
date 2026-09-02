@@ -176,6 +176,19 @@ function execute({ cookie, problem, code, action, onProgress, signal }) {
       const m = frame.message;
       if (!m || typeof m !== 'object') return;
 
+      // 로그인되지 않은 세션으로 채점을 요청하면 서버는 채점 대신 `reload` 를 보낸다.
+      // 이걸 모르고 넘기면 끝나는 프레임이 영영 안 와서 타임아웃까지 화면만 돈다.
+      if (m.action === 'reload') {
+        finish(
+          reject,
+          new Error(
+            '채점 서버가 로그인 상태를 인정하지 않았습니다. ' +
+              '`코딩테스트: 프로그래머스 로그인` 으로 다시 로그인해 주세요.'
+          )
+        );
+        return;
+      }
+
       messages.push(m);
       if (m.msg) onProgress?.(String(m.msg));
 

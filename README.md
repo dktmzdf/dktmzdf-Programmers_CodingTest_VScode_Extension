@@ -14,7 +14,7 @@ New-Item -ItemType Junction `
 
 VS Code에서 `Ctrl+Shift+P` → `Developer: Reload Window` → `Ctrl+Alt+P` 로 패널을 연다.
 
-자세한 사용법·브라우저 자동 로그인·문제 해결은 **[extension/README.md](extension/README.md)** 에 있다.
+자세한 사용법·로그인 쿠키 등록·문제 해결은 **[extension/README.md](extension/README.md)** 에 있다.
 (VS Code 확장 목록에서 "코딩테스트 에이전트"를 클릭해도 같은 문서가 보인다.)
 
 ## 만들 때의 결정

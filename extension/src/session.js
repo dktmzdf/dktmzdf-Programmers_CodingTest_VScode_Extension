@@ -6,6 +6,7 @@ const path = require('node:path');
 
 const { ProgrammersClient } = require('./programmers/client');
 const ws = require('./workspace');
+const git = require('./git');
 const { runAll } = require('./runner');
 const { explain, KINDS } = require('./explain');
 
@@ -37,15 +38,12 @@ const { explain, KINDS } = require('./explain');
 class Session {
   /**
    * @param {import('./auth').Auth} auth
-   * @param {import('./browserLogin').BrowserLogin} browserLogin
    */
-  constructor(auth, browserLogin) {
+  constructor(auth) {
     /** @private */
     this._auth = auth;
     /** @private */
     this._client = new ProgrammersClient(auth);
-    /** @private */
-    this._browserLogin = browserLogin;
     /** @private @type {vscode.EventEmitter<SessionState>} */
     this._emitter = new vscode.EventEmitter();
     /** @private @type {AbortController | null} */
@@ -188,6 +186,135 @@ class Session {
       });
       this.update({ results });
     });
+  }
+
+  // ---------------------------------------------------------------- git
+
+  /**
+   * 현재 문제 폴더의 소스·문제·케이스만 git 에 커밋한다. (로컬)
+   *
+   * `result.md`(채점 이력)·`explanation.md`(해설)는 담지 않는다 — 코드와 문제만
+   * 남긴다. 폴더를 통째로 add 하지 않고 정해진 파일만 명시적으로 스테이징한다.
+   *
+   * @returns {Promise<void>}
+   */
+  async gitCommit() {
+    const { dir, problem } = this.state;
+    if (!dir || !problem) {
+      this.update({ error: '먼저 문제를 불러와 주세요.' });
+      return;
+    }
+
+    await this._withBusy('커밋 중', async () => {
+      await this._saveOpenSolution(dir);
+
+      const root = await this._ensureRepo(dir);
+      if (!root) return; // 사용자가 저장소 만들기를 취소함
+
+      // 실제로 존재하는 파일만 스테이징한다.
+      const paths = [];
+      for (const name of git.SOURCE_FILES) {
+        const p = path.join(dir, name);
+        if (await ws.exists(p)) paths.push(p);
+      }
+      if (paths.length === 0) {
+        this.update({ error: '커밋할 파일이 없습니다.' });
+        return;
+      }
+
+      await git.addPaths(root, paths);
+      if (!(await git.hasStaged(root))) {
+        this.update({ notice: '커밋할 변경사항이 없습니다. (이미 최신 상태)' });
+        return;
+      }
+
+      const message = `${problem.lessonId} ${problem.title}`;
+      await git.commit(root, message);
+      const hash = await git.shortHead(root);
+      this.update({ notice: `커밋했습니다: ${hash} "${message}" (${paths.length}개 파일)` });
+    });
+  }
+
+  /**
+   * 커밋한 것을 원격 저장소로 push 한다.
+   *
+   * 되돌리기 어려운 바깥 방향 동작이라, 어디로 미는지 보여 주고 한 번 확인받는다.
+   *
+   * @returns {Promise<void>}
+   */
+  async gitPush() {
+    const { dir } = this.state;
+    if (!dir) {
+      this.update({ error: '먼저 문제를 불러와 주세요.' });
+      return;
+    }
+
+    const root = await git.repoRoot(dir);
+    if (!root) {
+      this.update({ error: '아직 커밋한 저장소가 없습니다. 먼저 커밋해 주세요.' });
+      return;
+    }
+
+    // 원격이 없으면 URL을 받아 origin 으로 등록한다.
+    let names = await git.remotes(root);
+    if (names.length === 0) {
+      const url = await vscode.window.showInputBox({
+        title: '원격 저장소 등록',
+        prompt: '아직 원격이 없습니다. push할 GitHub 등의 저장소 URL을 입력하세요. (비공개 권장)',
+        placeHolder: 'https://github.com/사용자명/저장소.git',
+        ignoreFocusOut: true,
+      });
+      if (!url || !url.trim()) return;
+      try {
+        await git.addRemote(root, 'origin', url.trim());
+      } catch (e) {
+        this.update({ error: e instanceof Error ? e.message : String(e) });
+        return;
+      }
+      names = ['origin'];
+    }
+
+    const remote = names.includes('origin') ? 'origin' : names[0];
+    const branch = await git.currentBranch(root);
+    const url = (await git.remoteUrl(root, remote)) ?? remote;
+    const pending = await git.unpushedCount(root, branch);
+    const countText = pending === null ? '' : ` (커밋 ${pending}개)`;
+
+    const answer = await vscode.window.showWarningMessage(
+      `${remote} 로 push할까요?${countText}\n${url}  ·  ${branch} 브랜치`,
+      { modal: true },
+      'Push'
+    );
+    if (answer !== 'Push') return;
+
+    await this._withBusy('push 중', async (signal) => {
+      // 상류가 없으면 -u 로 걸어 준다.
+      const args = pending === null ? ['-u', remote, branch] : [remote, branch];
+      await git.push(root, args, signal);
+      this.update({ notice: `${remote}/${branch} 로 push했습니다.` });
+    });
+  }
+
+  /**
+   * 문제 폴더가 속한 git 저장소를 찾고, 없으면 만들지 물어본다.
+   * @private
+   * @param {string} dir
+   * @returns {Promise<string | null>} 저장소 최상위 경로, 취소하면 null
+   */
+  async _ensureRepo(dir) {
+    const found = await git.repoRoot(dir);
+    if (found) return found;
+
+    const root = ws.resolveRoot();
+    const answer = await vscode.window.showWarningMessage(
+      `아직 git 저장소가 아닙니다. ${root} 에 새로 만들까요?`,
+      { modal: true },
+      '저장소 만들기'
+    );
+    if (answer !== '저장소 만들기') return null;
+
+    await git.init(root);
+    return (await git.repoRoot(dir)) ?? root;
   }
 
   /**
@@ -391,57 +518,42 @@ class Session {
   }
 
   /** @returns {Promise<void>} */
-  async login() {
-    await this._withBusy('로그인 기다리는 중', async (signal) => {
-      const cookie = await this._browserLogin.login(async (candidate) => {
-        try {
-          return (await this._client.checkCookieAuth(candidate)).ok;
-        } catch {
-          // 로그인 도중 일시적인 페이지 전환이나 네트워크 실패는 다음 확인에서 재시도한다.
-          return false;
-        }
-      }, signal);
-      await this._auth.setCookie(cookie);
-      this.update({
-        auth: { ok: true },
-        notice: '프로그래머스 로그인을 확인했습니다.',
-        error: null,
-      });
+  async promptForCookie() {
+    const value = await vscode.window.showInputBox({
+      title: '프로그래머스 로그인 쿠키 등록',
+      prompt:
+        'F12 → Network 탭 → F5 → 문제 페이지 요청 → Request Headers의 cookie: 값을 통째로 붙여넣으세요.',
+      placeHolder: 'a=1; b=2; c=3  (세미콜론으로 이어진 줄 전체)',
+      password: true,
+      ignoreFocusOut: true,
+    });
+    if (value === undefined) return;
+
+    try {
+      await this._auth.setCookie(value);
+    } catch (e) {
+      this.update({ error: e instanceof Error ? e.message : String(e) });
+      return;
+    }
+    await this.refreshAuth();
+    this.update({
+      notice: this.state.auth.ok ? '로그인 확인됐습니다.' : null,
+      error: this.state.auth.ok ? null : this.state.auth.reason ?? '쿠키 확인에 실패했습니다.',
     });
   }
 
   /** @returns {Promise<void>} */
-  async logout() {
-    const answer = await vscode.window.showWarningMessage(
-      '프로그래머스 로그인 정보와 확장 전용 브라우저 프로필을 삭제할까요?',
-      { modal: true },
-      '로그아웃'
-    );
-    if (answer !== '로그아웃') return;
-
+  async clearCookie() {
     await this._auth.clearCookie();
-    try {
-      await this._browserLogin.logout();
-      this.update({
-        auth: { ok: false, reason: '로그아웃했습니다.' },
-        notice: '로그인 정보와 전용 브라우저 프로필을 삭제했습니다.',
-        error: null,
-      });
-    } catch (e) {
-      this.update({
-        auth: { ok: false, reason: '저장된 쿠키는 삭제했습니다.' },
-        error: e instanceof Error ? e.message : String(e),
-      });
-    }
+    this.update({ auth: { ok: false, reason: '쿠키를 삭제했습니다.' }, notice: '쿠키를 삭제했습니다.' });
   }
 
-  // 이전 명령 ID를 쓰는 사용자 설정과 단축키를 위한 호환 별칭.
-  async promptForCookie() { await this.login(); }
-  async clearCookie() { await this.logout(); }
+  // 자동 로그인 버전의 명령 ID를 위한 호환 별칭.
+  async login() { await this.promptForCookie(); }
+  async logout() { await this.clearCookie(); }
 
   dispose() {
     this._abort?.abort();
-    this._browserLogin.dispose();
     this._emitter.dispose();
   }
 }

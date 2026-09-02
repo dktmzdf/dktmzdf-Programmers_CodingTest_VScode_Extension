@@ -5,44 +5,10 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
+const { install: installVscodeStub, config } = require('./_vscode-stub');
 
 const FIXTURES = path.join(__dirname, 'fixtures');
 const WORK = path.join(os.tmpdir(), 'coding-test-agent-test');
-
-/** vscode 스텁이 돌려줄 설정값. 테스트마다 바꿔 쓴다. */
-const config = {
-  timeoutMs: 5000,
-  pythonPath: '',
-  problemsRoot: '',
-  claudePath: '',
-  claudeModel: 'sonnet',
-};
-
-/**
- * `runner.js` 는 `vscode` 모듈을 쓴다. 확장 밖에서 돌리려고 가짜를 끼워 넣는다.
- */
-function installVscodeStub() {
-  if (require.cache['vscode']) return;
-
-  const Module = require('node:module');
-  const orig = Module._resolveFilename;
-  Module._resolveFilename = function (/** @type {string} */ request, /** @type {any[]} */ ...rest) {
-    if (request === 'vscode') return 'vscode';
-    return orig.call(this, request, ...rest);
-  };
-
-  require.cache['vscode'] = /** @type {any} */ ({
-    id: 'vscode',
-    filename: 'vscode',
-    loaded: true,
-    exports: {
-      workspace: {
-        getConfiguration: () => ({ get: (/** @type {string} */ k) => /** @type {any} */ (config)[k] }),
-      },
-      extensions: { getExtension: () => undefined },
-    },
-  });
-}
 
 /** @returns {boolean} 파이썬이 실제로 있는지 */
 function pythonAvailable() {

@@ -109,8 +109,10 @@ function parseLessonPage(html, url) {
     challengeableType: str(html, /\bdata-challengeable-type="([^"]*)"/) ?? 'algorithm',
     language: str(html, /\bdata-language="([^"]*)"/) ?? 'python3',
     actionCableUrl: str(html, /<meta\s+name="action-cable-url"\s+content="([^"]*)"/i),
-    // 비로그인이면 실행·제출 버튼 자리에 로그인 링크가 렌더된다.
-    loggedIn: !/\/account\/sign_in\?referer/.test(html),
+    // 로그인 여부는 `data-user-id` 로 판단한다 — 비로그인이면 빈 값이고
+    // 로그인하면 사용자 번호가 들어간다. 버튼 모양이나 로그인 링크 유무보다
+    // 훨씬 확실하다.
+    loggedIn: /\bdata-user-id="\d+"/.test(html),
   };
 }
 

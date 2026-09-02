@@ -48,7 +48,7 @@ class ProgrammersClient {
   }
 
   /**
-   * 아직 저장하지 않은 브라우저 쿠키가 로그인 상태인지 확인한다.
+   * 아직 저장하지 않은 쿠키가 로그인 상태인지 확인한다.
    * @param {string} cookie
    * @returns {Promise<{ ok: boolean, reason?: string }>}
    */
@@ -66,8 +66,16 @@ class ProgrammersClient {
     }
 
     const html = await res.text().catch(() => '');
-    if (/\/account\/sign_in\?referer/.test(html)) {
-      return { ok: false, reason: '세션이 만료되었습니다. 쿠키를 다시 등록해 주세요.' };
+
+    // 로그인 여부는 `data-user-id` 로만 판단한다. 비로그인이면 빈 문자열이고
+    // 로그인하면 사용자 번호가 들어간다.
+    //
+    // 예전에는 "로그인 링크가 있으면 비로그인" 으로 봤는데, 이 페이지에는 그 링크가
+    // 애초에 없다. 그래서 사이트가 브라우저를 열자마자 발급하는 **익명 세션 쿠키**도
+    // 통과해 버렸고, 로그인하기 전의 쿠키를 저장한 채 제출하면 채점 서버가
+    // action="reload" 만 돌려줘 화면이 조용히 멈췄다.
+    if (!hasUserId(html)) {
+      return { ok: false, reason: '아직 로그인되지 않았습니다.' };
     }
     return { ok: true };
   }
@@ -155,4 +163,17 @@ class ProgrammersClient {
   }
 }
 
-module.exports = { ProgrammersClient, ORIGIN };
+/**
+ * 페이지가 로그인한 사용자를 가리키고 있는지.
+ *
+ * 프로그래머스는 모든 페이지에 `data-user-id` 를 심는데, 비로그인이면 빈 값이라
+ * 숫자가 들어 있는지만 보면 된다. (`__hackle-init-info` 스크립트 태그 등)
+ *
+ * @param {string} html
+ * @returns {boolean}
+ */
+function hasUserId(html) {
+  return /\bdata-user-id="\d+"/.test(html);
+}
+
+module.exports = { ProgrammersClient, ORIGIN, hasUserId };

@@ -90,12 +90,14 @@ class ProblemViewProvider {
         case 'load':         await s.loadProblem(String(msg.url ?? '')); break;
         case 'runLocal':     await s.runLocal(); break;
         case 'submit':       await vscode.commands.executeCommand('codingTest.submit'); break;
+        case 'gitCommit':    await s.gitCommit(); break;
+        case 'gitPush':      await s.gitPush(); break;
         case 'explain':      await s.explainProblem(msg.kind); break;
         case 'addCase':      await s.addCase(draftFrom(msg)); break;
         case 'updateCase':   await s.updateCase(Number(msg.index), draftFrom(msg)); break;
         case 'deleteCase':   await s.deleteCase(Number(msg.index)); break;
-        case 'login':        await s.login(); break;
-        case 'logout':       await s.logout(); break;
+        case 'setCookie':    await s.promptForCookie(); break;
+        case 'clearCookie':  await s.clearCookie(); break;
         case 'cancel':       s.cancel(); break;
         case 'openWide':     this.openWide(); break;
         case 'openSolution': await this._openSolution(); break;

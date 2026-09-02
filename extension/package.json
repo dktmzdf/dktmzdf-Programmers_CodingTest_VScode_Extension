@@ -14,7 +14,7 @@
   ],
   "main": "./src/extension.js",
   "scripts": {
-    "package:vsix": "vsce package --out ../coding-test-agent-${npm_package_version}.vsix"
+    "package:vsix": "vsce package --out ../coding-test-agent-%npm_package_version%.vsix"
   },
   "activationEvents": [],
   "contributes": {
@@ -58,13 +58,23 @@
         "category": "코딩테스트"
       },
       {
-        "command": "codingTest.login",
-        "title": "코딩테스트: 프로그래머스 로그인",
+        "command": "codingTest.setCookie",
+        "title": "코딩테스트: 프로그래머스 로그인 쿠키 등록",
         "category": "코딩테스트"
       },
       {
-        "command": "codingTest.logout",
-        "title": "코딩테스트: 프로그래머스 로그아웃",
+        "command": "codingTest.clearCookie",
+        "title": "코딩테스트: 로그인 쿠키 삭제",
+        "category": "코딩테스트"
+      },
+      {
+        "command": "codingTest.gitCommit",
+        "title": "코딩테스트: 풀이 커밋 (로컬)",
+        "category": "코딩테스트"
+      },
+      {
+        "command": "codingTest.gitPush",
+        "title": "코딩테스트: 원격으로 push",
         "category": "코딩테스트"
       },
       {
@@ -98,11 +108,6 @@
           "default": "",
           "markdownDescription": "로컬 테스트에 쓸 파이썬 실행 파일. 비워두면 Python 확장이 선택한 인터프리터 → `python` 순으로 찾는다."
         },
-        "codingTest.browserPath": {
-          "type": "string",
-          "default": "",
-          "markdownDescription": "프로그래머스 자동 로그인에 쓸 Chrome 또는 Edge 실행 파일. 비워두면 설치된 Chrome → Edge 순으로 찾는다."
-        },
         "codingTest.timeoutMs": {
           "type": "number",
           "default": 5000,
@@ -117,8 +122,16 @@
           "type": "string",
           "default": "sonnet",
           "markdownDescription": "해설을 만들 모델. 코딩테스트 해설에는 `sonnet` 이면 충분하고 `opus` 보다 훨씬 싸다."
+        },
+        "codingTest.gitPath": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "커밋·push 에 쓸 git 실행 파일. 비워두면 `PATH` 에서 `git` 을 찾는다."
         }
       }
     }
+  },
+  "devDependencies": {
+    "@vscode/vsce": "^3.6.2"
   }
 }

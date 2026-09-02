@@ -9,7 +9,7 @@ const { spawn } = require('node:child_process');
  * @typedef {import('./runner').CaseResult} CaseResult
  */
 
-/** @typedef {'hint' | 'approach' | 'full' | 'diagnose'} ExplainKind */
+/** @typedef {'hint' | 'approach' | 'full' | 'diagnose' | 'answer'} ExplainKind */
 
 const SYSTEM_PROMPT = [
   '너는 코딩테스트를 공부하는 학습자의 튜터다.',
@@ -54,6 +54,15 @@ const KINDS = {
       '아래는 내가 쓴 코드와 실패한 테스트 케이스다.',
       '**왜 틀렸는지 원인과 고쳐야 할 지점만** 짚어 달라.',
       '완성된 정답 코드는 **주지 마라** — 내가 직접 고칠 수 있게 방향만 알려 달라.',
+    ].join(' '),
+  },
+  answer: {
+    label: '정답',
+    needsCode: true,
+    instruction: [
+      '아래 문제의 **전체 해설** 및 **정답**을 달라.',
+      '① 접근법 ② 파이썬 모범 답안 코드 ③ 시간·공간 복잡도',
+      '④ 내가 쓴 코드와의 차이(내 코드가 있다면) 순으로 정리해 달라.',
     ].join(' '),
   },
 };
