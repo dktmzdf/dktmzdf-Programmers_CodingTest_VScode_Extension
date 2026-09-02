@@ -39,7 +39,7 @@ const keepAlive = setInterval(() => {}, 500);
   require('./markdown.test')(suite);
   require('./parser.test')(suite);
   require('./auth.test')(suite);
-  await require('./git.test')(suite);
+  require('./testgen.test')(suite);
   await require('./runner.test')(suite);
 
   suite.summary();

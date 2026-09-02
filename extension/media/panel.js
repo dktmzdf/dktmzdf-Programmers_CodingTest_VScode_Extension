@@ -244,11 +244,19 @@
     const sec = el(`<section>
       <div class="section-head">
         <span>테스트 케이스 <span class="count"></span></span>
-        <button class="ghost" id="toggle-add">+ 추가</button>
+        <span class="row">
+          <button class="ghost" id="generate" title="클로드가 엣지 케이스를 만들어 제안한다">🧪 만들기</button>
+          <button class="ghost" id="toggle-add">+ 추가</button>
+        </span>
       </div>
       <div id="case-list"></div>
+      <div id="proposals"></div>
       <div id="add-form"></div>
     </section>`);
+
+    const gen = /** @type {HTMLButtonElement} */ (sec.querySelector('#generate'));
+    gen.disabled = Boolean(state.busy);
+    gen.addEventListener('click', () => send('generateCases'));
 
     const count = sec.querySelector('.count');
     if (count) count.textContent = `(${state.cases.length})`;
@@ -264,8 +272,71 @@
       render();
     });
 
+    if (state.proposals?.length) {
+      sec.querySelector('#proposals')?.appendChild(renderProposals());
+    }
     if (draft.showAdd) sec.querySelector('#add-form')?.appendChild(renderAddForm());
     return sec;
+  }
+
+  /**
+   * 클로드가 제안한 케이스. 아직 저장된 게 아니라서 담아야 실제 케이스가 된다.
+   * 기대값을 클로드가 계산한 것이므로 틀릴 수 있다는 걸 분명히 보여 준다.
+   */
+  function renderProposals() {
+    const fn = isFunction();
+    const sig = signature();
+    const wrap = el(`<div class="banner notice" style="margin-top:8px">
+      <div class="row" style="justify-content:space-between">
+        <b>클로드가 제안한 케이스</b>
+        <span class="row">
+          <button class="ghost" id="accept-all">전부 담기</button>
+          <button class="ghost" id="dismiss">버리기</button>
+        </span>
+      </div>
+      <div class="dim" style="margin:6px 0">
+        기대값은 클로드가 계산한 것이라 <b>틀릴 수 있습니다.</b> 담은 뒤에도 수정할 수 있습니다.
+      </div>
+      <div id="proposal-list"></div>
+    </div>`);
+
+    const list = wrap.querySelector('#proposal-list');
+    state.proposals.forEach((/** @type {any} */ p, /** @type {number} */ i) => {
+      const box = el(`<div class="case" style="margin-bottom:6px">
+        <div class="head">
+          <span>🧪</span><span class="name"></span>
+          <button class="ghost" data-act="take">담기</button>
+        </div>
+        <div class="body"></div>
+      </div>`);
+
+      const nm = box.querySelector('.name');
+      if (nm) nm.textContent = p.name;
+
+      const body = box.querySelector('.body');
+      if (p.why) {
+        const why = el('<div class="dim" style="margin-bottom:6px"></div>');
+        why.textContent = p.why;
+        body?.appendChild(why);
+      }
+      if (fn) {
+        (p.args || []).forEach((/** @type {string} */ a, /** @type {number} */ j) =>
+          body?.appendChild(io(sig[j] || `인자 ${j + 1}`, a))
+        );
+      } else {
+        body?.appendChild(io('입력', p.input));
+      }
+      body?.appendChild(io(fn ? '기대한 반환값' : '기대한 출력', p.expected, 'expected'));
+
+      box.querySelector('[data-act="take"]')?.addEventListener('click', () =>
+        send('acceptProposal', { index: i })
+      );
+      list?.appendChild(box);
+    });
+
+    wrap.querySelector('#accept-all')?.addEventListener('click', () => send('acceptAllProposals'));
+    wrap.querySelector('#dismiss')?.addEventListener('click', () => send('dismissProposals'));
+    return wrap;
   }
 
   /**
@@ -292,7 +363,10 @@
     const name = box.querySelector('.name');
     if (name) name.textContent = c.name;
     const tag = box.querySelector('.tag');
-    if (tag) tag.textContent = c.source === 'official' ? '공식' : '내 케이스';
+    if (tag) {
+      tag.textContent =
+        c.source === 'official' ? '공식' : c.source === 'ai' ? '🧪 클로드' : '내 케이스';
+    }
     const ms = box.querySelector('.ms');
     if (ms) ms.textContent = result ? `${result.ms}ms` : '';
 
@@ -325,7 +399,8 @@
     if (result?.stdout?.trim()) body.appendChild(io('print 출력', result.stdout));
     if (result?.stderr?.trim()) body.appendChild(io('에러', result.stderr, 'actual'));
 
-    if (c.source === 'user') {
+    // 공식 예제만 잠근다. 클로드 제안은 기대값이 틀릴 수 있어 고칠 수 있어야 한다.
+    if (c.source !== 'official') {
       const bar = el(`<div class="row" style="margin-top:8px">
         <button class="ghost" data-act="edit">수정</button>
         <button class="ghost" data-act="del">삭제</button>

@@ -13,10 +13,11 @@ const ORIGIN = 'https://school.programmers.co.kr';
  *
  * @typedef {Object} TestCase
  * @property {string} name
- * @property {'official' | 'user'} source
+ * @property {'official' | 'user' | 'ai'} source  사이트 예제 / 내가 넣은 것 / 클로드 제안
  * @property {string} expected
  * @property {string} [input]
  * @property {string[]} [args]
+ * @property {string} [why]  클로드가 제안한 이유 (source가 'ai'일 때만)
  */
 
 /**

@@ -92,19 +92,35 @@ async function explain({ kind, problem, code, results, signal }) {
   const spec = KINDS[kind];
   if (!spec) throw new Error(`알 수 없는 해설 종류: ${kind}`);
 
+  const prompt = buildPrompt(spec, problem, code, results);
+  return await callClaude({ prompt, systemPrompt: SYSTEM_PROMPT, signal });
+}
+
+/**
+ * Claude Code CLI를 헤드리스로 한 번 부르고 답변 텍스트를 돌려준다.
+ *
+ * 도구를 끄고(`--tools ""`) 시스템 프롬프트를 갈아끼워, 파일을 뒤지지 않고
+ * 프롬프트에 담아 준 내용만으로 한 번에 답하게 한다.
+ * 해설과 테스트 케이스 생성이 이 함수를 함께 쓴다.
+ *
+ * @param {Object} opts
+ * @param {string} opts.prompt        stdin 으로 넘길 본문
+ * @param {string} opts.systemPrompt
+ * @param {AbortSignal} [opts.signal]
+ * @returns {Promise<ExplainResult>}
+ */
+async function callClaude({ prompt, systemPrompt, signal }) {
   const cfg = vscode.workspace.getConfiguration('codingTest');
   const bin = String(cfg.get('claudePath') || '').trim() || 'claude';
   const model = String(cfg.get('claudeModel') || '').trim() || 'sonnet';
 
-  const prompt = buildPrompt(spec, problem, code, results);
   const started = Date.now();
-
   const raw = await run(bin, [
     '-p',
     '--output-format', 'json',
     '--model', model,
     '--tools', '',
-    '--system-prompt', SYSTEM_PROMPT,
+    '--system-prompt', systemPrompt,
   ], prompt, signal);
 
   let text = raw.trim();
@@ -234,4 +250,4 @@ function notFound(bin, e) {
   return new Error(`Claude CLI 실행 실패: ${msg}`);
 }
 
-module.exports = { explain, KINDS, SYSTEM_PROMPT };
+module.exports = { explain, callClaude, KINDS, SYSTEM_PROMPT };

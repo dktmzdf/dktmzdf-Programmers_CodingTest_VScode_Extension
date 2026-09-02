@@ -122,7 +122,8 @@ function mergeCases(official, existing, type) {
   const fits = (/** @type {TestCase} */ c) =>
     type === 'function' ? Array.isArray(c.args) : typeof c.input === 'string';
 
-  const mine = existing.filter((c) => c.source === 'user' && fits(c));
+  // 내가 넣은 것과 클로드가 제안해 담아 둔 것은 모두 지킨다. 공식 예제만 갈아끼운다.
+  const mine = existing.filter((c) => c.source !== 'official' && fits(c));
   return [...official, ...mine];
 }
 

@@ -45,8 +45,7 @@ function activate(context) {
 
     vscode.commands.registerCommand('codingTest.runLocal', () => session.runLocal()),
     vscode.commands.registerCommand('codingTest.submit', () => session.submit()),
-    vscode.commands.registerCommand('codingTest.gitCommit', () => session.gitCommit()),
-    vscode.commands.registerCommand('codingTest.gitPush', () => session.gitPush()),
+    vscode.commands.registerCommand('codingTest.generateCases', () => session.generateCases()),
     vscode.commands.registerCommand('codingTest.setCookie', () => session.promptForCookie()),
     vscode.commands.registerCommand('codingTest.clearCookie', () => session.clearCookie()),
     // 자동 로그인 버전의 명령 ID는 사용자 단축키 호환을 위해 등록만 유지한다.

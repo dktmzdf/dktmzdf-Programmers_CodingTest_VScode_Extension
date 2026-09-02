@@ -16,7 +16,6 @@ const config = {
   problemsRoot: '',
   claudePath: '',
   claudeModel: 'sonnet',
-  gitPath: '',
 };
 
 /**

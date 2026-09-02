@@ -68,13 +68,8 @@
         "category": "코딩테스트"
       },
       {
-        "command": "codingTest.gitCommit",
-        "title": "코딩테스트: 풀이 커밋 (로컬)",
-        "category": "코딩테스트"
-      },
-      {
-        "command": "codingTest.gitPush",
-        "title": "코딩테스트: 원격으로 push",
+        "command": "codingTest.generateCases",
+        "title": "코딩테스트: 테스트 케이스 만들기 (클로드)",
         "category": "코딩테스트"
       },
       {
@@ -122,11 +117,6 @@
           "type": "string",
           "default": "sonnet",
           "markdownDescription": "해설을 만들 모델. 코딩테스트 해설에는 `sonnet` 이면 충분하고 `opus` 보다 훨씬 싸다."
-        },
-        "codingTest.gitPath": {
-          "type": "string",
-          "default": "",
-          "markdownDescription": "커밋·push 에 쓸 git 실행 파일. 비워두면 `PATH` 에서 `git` 을 찾는다."
         }
       }
     }

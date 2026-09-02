@@ -6,7 +6,7 @@ const path = require('node:path');
 
 const { ProgrammersClient } = require('./programmers/client');
 const ws = require('./workspace');
-const git = require('./git');
+const testgen = require('./testgen');
 const { runAll } = require('./runner');
 const { explain, KINDS } = require('./explain');
 
@@ -27,6 +27,7 @@ const { explain, KINDS } = require('./explain');
  * @property {string | null} busy  진행 중인 작업 라벨
  * @property {{ label: string, text: string, ms: number, costUsd: number | null } | null} explanation
  * @property {import('./programmers/judgeSocket').Verdict | null} submitResult
+ * @property {TestCase[] | null} proposals  클로드가 제안한, 아직 담지 않은 케이스
  * @property {string | null} error
  * @property {string | null} notice
  */
@@ -59,6 +60,7 @@ class Session {
       busy: null,
       explanation: null,
       submitResult: null,
+      proposals: null,
       error: null,
       notice: null,
     };
@@ -140,6 +142,7 @@ class Session {
         results: null,
         explanation: null,
         submitResult: null,
+        proposals: null,
         notice,
       });
 
@@ -188,135 +191,6 @@ class Session {
     });
   }
 
-  // ---------------------------------------------------------------- git
-
-  /**
-   * 현재 문제 폴더의 소스·문제·케이스만 git 에 커밋한다. (로컬)
-   *
-   * `result.md`(채점 이력)·`explanation.md`(해설)는 담지 않는다 — 코드와 문제만
-   * 남긴다. 폴더를 통째로 add 하지 않고 정해진 파일만 명시적으로 스테이징한다.
-   *
-   * @returns {Promise<void>}
-   */
-  async gitCommit() {
-    const { dir, problem } = this.state;
-    if (!dir || !problem) {
-      this.update({ error: '먼저 문제를 불러와 주세요.' });
-      return;
-    }
-
-    await this._withBusy('커밋 중', async () => {
-      await this._saveOpenSolution(dir);
-
-      const root = await this._ensureRepo(dir);
-      if (!root) return; // 사용자가 저장소 만들기를 취소함
-
-      // 실제로 존재하는 파일만 스테이징한다.
-      const paths = [];
-      for (const name of git.SOURCE_FILES) {
-        const p = path.join(dir, name);
-        if (await ws.exists(p)) paths.push(p);
-      }
-      if (paths.length === 0) {
-        this.update({ error: '커밋할 파일이 없습니다.' });
-        return;
-      }
-
-      await git.addPaths(root, paths);
-      if (!(await git.hasStaged(root))) {
-        this.update({ notice: '커밋할 변경사항이 없습니다. (이미 최신 상태)' });
-        return;
-      }
-
-      const message = `${problem.lessonId} ${problem.title}`;
-      await git.commit(root, message);
-      const hash = await git.shortHead(root);
-      this.update({ notice: `커밋했습니다: ${hash} "${message}" (${paths.length}개 파일)` });
-    });
-  }
-
-  /**
-   * 커밋한 것을 원격 저장소로 push 한다.
-   *
-   * 되돌리기 어려운 바깥 방향 동작이라, 어디로 미는지 보여 주고 한 번 확인받는다.
-   *
-   * @returns {Promise<void>}
-   */
-  async gitPush() {
-    const { dir } = this.state;
-    if (!dir) {
-      this.update({ error: '먼저 문제를 불러와 주세요.' });
-      return;
-    }
-
-    const root = await git.repoRoot(dir);
-    if (!root) {
-      this.update({ error: '아직 커밋한 저장소가 없습니다. 먼저 커밋해 주세요.' });
-      return;
-    }
-
-    // 원격이 없으면 URL을 받아 origin 으로 등록한다.
-    let names = await git.remotes(root);
-    if (names.length === 0) {
-      const url = await vscode.window.showInputBox({
-        title: '원격 저장소 등록',
-        prompt: '아직 원격이 없습니다. push할 GitHub 등의 저장소 URL을 입력하세요. (비공개 권장)',
-        placeHolder: 'https://github.com/사용자명/저장소.git',
-        ignoreFocusOut: true,
-      });
-      if (!url || !url.trim()) return;
-      try {
-        await git.addRemote(root, 'origin', url.trim());
-      } catch (e) {
-        this.update({ error: e instanceof Error ? e.message : String(e) });
-        return;
-      }
-      names = ['origin'];
-    }
-
-    const remote = names.includes('origin') ? 'origin' : names[0];
-    const branch = await git.currentBranch(root);
-    const url = (await git.remoteUrl(root, remote)) ?? remote;
-    const pending = await git.unpushedCount(root, branch);
-    const countText = pending === null ? '' : ` (커밋 ${pending}개)`;
-
-    const answer = await vscode.window.showWarningMessage(
-      `${remote} 로 push할까요?${countText}\n${url}  ·  ${branch} 브랜치`,
-      { modal: true },
-      'Push'
-    );
-    if (answer !== 'Push') return;
-
-    await this._withBusy('push 중', async (signal) => {
-      // 상류가 없으면 -u 로 걸어 준다.
-      const args = pending === null ? ['-u', remote, branch] : [remote, branch];
-      await git.push(root, args, signal);
-      this.update({ notice: `${remote}/${branch} 로 push했습니다.` });
-    });
-  }
-
-  /**
-   * 문제 폴더가 속한 git 저장소를 찾고, 없으면 만들지 물어본다.
-   * @private
-   * @param {string} dir
-   * @returns {Promise<string | null>} 저장소 최상위 경로, 취소하면 null
-   */
-  async _ensureRepo(dir) {
-    const found = await git.repoRoot(dir);
-    if (found) return found;
-
-    const root = ws.resolveRoot();
-    const answer = await vscode.window.showWarningMessage(
-      `아직 git 저장소가 아닙니다. ${root} 에 새로 만들까요?`,
-      { modal: true },
-      '저장소 만들기'
-    );
-    if (answer !== '저장소 만들기') return null;
-
-    await git.init(root);
-    return (await git.repoRoot(dir)) ?? root;
-  }
-
   /**
    * solution.py 가 편집 중이면 저장하고 나서 실행해야 한다.
    * @private
@@ -330,6 +204,65 @@ class Session {
         await doc.save();
       }
     }
+  }
+
+  // -------------------------------------------------- 케이스 생성 (클로드)
+
+  /**
+   * 클로드에게 엣지 케이스를 만들게 한다. 바로 저장하지 않고 제안 목록에만 담는다 —
+   * 기대값을 클로드가 계산하므로 틀릴 수 있어, 사람이 보고 고른 뒤 담는다.
+   *
+   * @returns {Promise<void>}
+   */
+  async generateCases() {
+    const { problem, dir, cases } = this.state;
+    if (!problem || !dir) {
+      this.update({ error: '먼저 문제를 불러와 주세요.' });
+      return;
+    }
+
+    await this._withBusy('테스트 케이스 만드는 중', async (signal) => {
+      const res = await testgen.generate({ problem, existing: cases, signal });
+      const cost = res.costUsd === null ? '' : ` · $${res.costUsd.toFixed(3)}`;
+      this.update({
+        proposals: res.cases,
+        notice: `${res.cases.length}개를 제안했습니다. 확인하고 담아 주세요. (${(res.ms / 1000).toFixed(1)}초${cost})`,
+      });
+    });
+  }
+
+  /**
+   * 제안 하나를 실제 케이스로 담는다.
+   * @param {number} index
+   * @returns {Promise<void>}
+   */
+  async acceptProposal(index) {
+    const proposals = this.state.proposals;
+    const picked = proposals?.[index];
+    if (!proposals || !picked) return;
+
+    await this._mutateCases((cases) => {
+      cases.push(picked);
+      return cases;
+    });
+    this.update({ proposals: proposals.filter((_, i) => i !== index) });
+  }
+
+  /** @returns {Promise<void>} */
+  async acceptAllProposals() {
+    const proposals = this.state.proposals;
+    if (!proposals || proposals.length === 0) return;
+
+    await this._mutateCases((cases) => {
+      cases.push(...proposals);
+      return cases;
+    });
+    this.update({ proposals: null, notice: `제안 ${proposals.length}개를 모두 담았습니다.` });
+  }
+
+  /** 제안을 버린다. 담지 않은 것은 저장되지 않는다. */
+  dismissProposals() {
+    this.update({ proposals: null });
   }
 
   // ------------------------------------------------------------ 케이스 편집
@@ -360,8 +293,9 @@ class Session {
     await this._mutateCases((cases) => {
       const c = cases[index];
       if (!c) throw new Error('없는 테스트 케이스입니다.');
-      if (c.source !== 'user') throw new Error('공식 예제는 수정할 수 없습니다.');
-      cases[index] = { name: c.name, source: 'user', ...this._shape(draft) };
+      if (c.source === 'official') throw new Error('공식 예제는 수정할 수 없습니다.');
+      // 클로드가 제안한 케이스도 고칠 수 있어야 한다 — 기대값이 틀렸을 수 있으므로.
+      cases[index] = { name: c.name, source: c.source, ...this._shape(draft) };
       return cases;
     });
   }

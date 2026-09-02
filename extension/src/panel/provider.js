@@ -90,9 +90,11 @@ class ProblemViewProvider {
         case 'load':         await s.loadProblem(String(msg.url ?? '')); break;
         case 'runLocal':     await s.runLocal(); break;
         case 'submit':       await vscode.commands.executeCommand('codingTest.submit'); break;
-        case 'gitCommit':    await s.gitCommit(); break;
-        case 'gitPush':      await s.gitPush(); break;
         case 'explain':      await s.explainProblem(msg.kind); break;
+        case 'generateCases':    await s.generateCases(); break;
+        case 'acceptProposal':   await s.acceptProposal(Number(msg.index)); break;
+        case 'acceptAllProposals': await s.acceptAllProposals(); break;
+        case 'dismissProposals': s.dismissProposals(); break;
         case 'addCase':      await s.addCase(draftFrom(msg)); break;
         case 'updateCase':   await s.updateCase(Number(msg.index), draftFrom(msg)); break;
         case 'deleteCase':   await s.deleteCase(Number(msg.index)); break;
@@ -219,6 +221,7 @@ function viewModel(s) {
     results: s.results,
     explanation: s.explanation,
     submitResult: s.submitResult,
+    proposals: s.proposals,
   };
 }
 
