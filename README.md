@@ -1,5 +1,7 @@
 # CodingTestAgent
 
+로그인를 쿠키로 해야하는 문제가 있음... 알아서 가져다 쓰세요
+
 프로그래머스 스쿨 코딩테스트 숙제를 VS Code에서 풀고, 제출하고, 기록으로 남기기 위한 저장소.
 
 | [`extension/`](extension/) | VS Code 확장 본체. **사용법은 [extension/README.md](extension/README.md)** |
